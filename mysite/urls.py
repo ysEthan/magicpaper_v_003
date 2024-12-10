@@ -20,17 +20,17 @@ from django.urls import path, include
 
 
 urlpatterns = [
-    # Django 管理后台
+    # Django 管理后台 - 访问地址为 /admin/
     path('admin/', admin.site.urls),
 
+    # 根路径 - 处理网站首页
     path('', include('page.urls')),
 
-    # 应用路由配置
-    path('auth/', include('muggle.urls')),
-    path('gallery/', include('gallery.urls')),
-    path('manufacturing/', include('manufacturing.urls')),
-    path('procurement/', include('procurement.urls')),
-    path('storage/', include('storage.urls')),
-    path('trade/', include('trade.urls')),
-
+    # 各个应用的路由配置
+    path('auth/', include('muggle.urls')),          # 用户认证模块
+    path('gallery/', include('gallery.urls')),      # 图库模块
+    path('manufacturing/', include('manufacturing.urls')), # 制造模块
+    path('procurement/', include('procurement.urls')), # 采购模块
+    path('storage/', include('storage.urls')),      # 存储模块
+    path('trade/', include('trade.urls')),          # 交易模块
 ]
