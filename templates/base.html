@@ -1,0 +1,17 @@
+<ul class="navbar-nav ms-auto">
+    {% if user.is_authenticated %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'muggle:profile' %}">{{ user.username }}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'muggle:logout' %}">退出</a>
+        </li>
+    {% else %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'muggle:login' %}">登录</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'muggle:register' %}">注册</a>
+        </li>
+    {% endif %}
+</ul> 

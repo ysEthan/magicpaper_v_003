@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from page import views
 
 
 urlpatterns = [
@@ -33,4 +34,6 @@ urlpatterns = [
     path('procurement/', include('procurement.urls')), # 采购模块
     path('storage/', include('storage.urls')),      # 存储模块
     path('trade/', include('trade.urls')),          # 交易模块
+    path('register/', views.register, name='register'),
+    path('login/', views.login, name='login'),
 ]
