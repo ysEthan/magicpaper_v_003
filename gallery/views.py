@@ -11,7 +11,7 @@ from django.db import models
 
 class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Category
-    template_name = 'gallery/category_list.html'
+    template_name = 'gallery/category/category_list.html'
     context_object_name = 'categories'
     paginate_by = 10
     permission_required = 'gallery.view_category'
@@ -52,7 +52,7 @@ class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 class CategoryCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Category
     form_class = CategoryForm
-    template_name = 'gallery/category_form.html'
+    template_name = 'gallery/category/category_form.html'
     success_url = reverse_lazy('gallery:category_list')
     permission_required = 'gallery.add_category'
     
@@ -76,7 +76,7 @@ class CategoryCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
 class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Category
     form_class = CategoryForm
-    template_name = 'gallery/category_form.html'
+    template_name = 'gallery/category/category_form.html'
     success_url = reverse_lazy('gallery:category_list')
     permission_required = 'gallery.change_category'
     
@@ -90,7 +90,7 @@ class CategoryUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
 
 class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Category
-    template_name = 'gallery/category_confirm_delete.html'
+    template_name = 'gallery/category/category_confirm_delete.html'
     success_url = reverse_lazy('gallery:category_list')
     permission_required = 'gallery.delete_category'
     
@@ -104,7 +104,7 @@ class CategoryDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
 
 class SPUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = SPU
-    template_name = 'gallery/spu_list.html'
+    template_name = 'gallery/spu/spu_list.html'
     context_object_name = 'spus'
     paginate_by = 10
     permission_required = 'gallery.view_spu'
@@ -156,7 +156,7 @@ class SPUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 class SPUCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = SPU
     form_class = SPUForm
-    template_name = 'gallery/spu_form.html'
+    template_name = 'gallery/spu/spu_form.html'
     success_url = reverse_lazy('gallery:spu_list')
     permission_required = 'gallery.add_spu'
     
@@ -176,7 +176,7 @@ class SPUCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 class SPUUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = SPU
     form_class = SPUForm
-    template_name = 'gallery/spu_form.html'
+    template_name = 'gallery/spu/spu_form.html'
     success_url = reverse_lazy('gallery:spu_list')
     permission_required = 'gallery.change_spu'
     
@@ -190,7 +190,7 @@ class SPUUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
 class SPUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = SPU
-    template_name = 'gallery/spu_confirm_delete.html'
+    template_name = 'gallery/spu/spu_confirm_delete.html'
     success_url = reverse_lazy('gallery:spu_list')
     permission_required = 'gallery.delete_spu'
     
@@ -204,7 +204,7 @@ class SPUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 
 class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = SKU
-    template_name = 'gallery/sku_list.html'
+    template_name = 'gallery/sku/sku_list.html'
     context_object_name = 'skus'
     paginate_by = 10
     permission_required = 'gallery.view_sku'
@@ -267,7 +267,7 @@ class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 class SKUCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = SKU
     form_class = SKUForm
-    template_name = 'gallery/sku_form.html'
+    template_name = 'gallery/sku/sku_form.html'
     success_url = reverse_lazy('gallery:sku_list')
     permission_required = 'gallery.add_sku'
     
@@ -287,7 +287,7 @@ class SKUCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 class SKUUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = SKU
     form_class = SKUForm
-    template_name = 'gallery/sku_form.html'
+    template_name = 'gallery/sku/sku_form.html'
     success_url = reverse_lazy('gallery:sku_list')
     permission_required = 'gallery.change_sku'
     
@@ -301,7 +301,7 @@ class SKUUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
 class SKUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = SKU
-    template_name = 'gallery/sku_confirm_delete.html'
+    template_name = 'gallery/sku/sku_confirm_delete.html'
     success_url = reverse_lazy('gallery:sku_list')
     permission_required = 'gallery.delete_sku'
     
