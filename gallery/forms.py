@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Category, SPU
+from .models import Category, SPU, SKU
 
 class CategoryForm(forms.ModelForm):
     class Meta:
@@ -62,3 +62,27 @@ class SPUForm(forms.ModelForm):
         # 添加帮助文本
         self.fields['spu_code'].help_text = '唯一的SPU标识码，至少4个字符'
         self.fields['category'].help_text = '只能选择最后一级类目'
+
+class SKUForm(forms.ModelForm):
+    class Meta:
+        model = SKU
+        fields = ['sku_code', 'sku_name', 'provider_name', 'unit_price', 
+                 'weight', 'plating_process', 'length', 'width', 'height', 
+                 'other_dimensions', 'material', 'img_url', 'spu', 'status']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 添加 Bootstrap 类
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+        
+        # 只显示启用状态的SPU
+        self.fields['spu'].queryset = SPU.objects.filter(status=True)
+        
+        # 添加帮助文本
+        self.fields['sku_code'].help_text = '唯一的SKU标识码，至少4个字符'
+        self.fields['unit_price'].help_text = '单位：元'
+        self.fields['weight'].help_text = '单位：kg'
+        self.fields['length'].help_text = '单位：mm'
+        self.fields['width'].help_text = '单位：mm'
+        self.fields['height'].help_text = '单位：mm'

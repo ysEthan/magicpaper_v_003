@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 import uuid
 import os
+from django.core.validators import MinValueValidator
 
 def category_image_path(instance, filename):
     # 获取文件扩展名
@@ -212,3 +213,159 @@ class SPU(models.Model):
     def category_full_name(self):
         """返回完整的类目路径"""
         return self.category.full_name if self.category else ''
+
+class SKU(models.Model):
+    PLATING_PROCESS_CHOICES = (
+        ('none', '无电镀'),
+        ('gold', '镀金'),
+        ('silver', '镀银'),
+        ('nickel', '镀镍'),
+        ('chrome', '镀铬'),
+        ('copper', '镀铜'),
+        ('other', '其他'),
+    )
+
+    id = models.AutoField(primary_key=True, verbose_name='SKU ID')
+    sku_code = models.CharField(
+        max_length=50, 
+        unique=True, 
+        verbose_name='SKU编码',
+        help_text='唯一的SKU标识码'
+    )
+    sku_name = models.CharField(
+        max_length=200, 
+        verbose_name='SKU名称',
+        help_text='产品具体型号名称'
+    )
+    provider_name = models.CharField(
+        max_length=100,
+        verbose_name='供应商名称',
+        help_text='产品供应商'
+    )
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name='单价',
+        help_text='产品单价（元）'
+    )
+    weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        verbose_name='重量',
+        help_text='产品重量（kg）'
+    )
+    plating_process = models.CharField(
+        max_length=20,
+        choices=PLATING_PROCESS_CHOICES,
+        default='none',
+        verbose_name='电镀工艺',
+        help_text='产品电镀工艺'
+    )
+    length = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name='长度',
+        help_text='产品长度（mm）'
+    )
+    width = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name='宽度',
+        help_text='产品宽度（mm）'
+    )
+    height = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name='高度',
+        help_text='产品高度（mm）'
+    )
+    other_dimensions = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='其他尺寸',
+        help_text='其他尺寸规格描述'
+    )
+    material = models.CharField(
+        max_length=100,
+        verbose_name='材质',
+        help_text='产品材质'
+    )
+    img_url = models.ImageField(
+        upload_to='skus',
+        blank=True,
+        null=True,
+        verbose_name='产品图片',
+        help_text='产品图片'
+    )
+    spu = models.ForeignKey(
+        'SPU',
+        on_delete=models.CASCADE,
+        related_name='skus',
+        verbose_name='所属SPU',
+        help_text='产品所属SPU'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name='创建时间'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        verbose_name='更新时间'
+    )
+    status = models.BooleanField(
+        default=True,
+        verbose_name='状态',
+        help_text='是否启用'
+    )
+
+    class Meta:
+        db_table = 'gallery_sku'
+        verbose_name = 'SKU'
+        verbose_name_plural = 'SKU列表'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['sku_code']),
+            models.Index(fields=['spu']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.sku_code} - {self.sku_name}"
+
+    def clean(self):
+        # 验证SKU编码格式
+        if self.sku_code:
+            if len(self.sku_code) < 4:
+                raise ValidationError({
+                    'sku_code': 'SKU编码长度不能小于4个字符'
+                })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def full_name(self):
+        """返回完整的SKU名称"""
+        return f"{self.spu.spu_name} - {self.sku_name}"
+
+    @property
+    def dimensions(self):
+        """返回标准尺寸描述"""
+        return f"{self.length}*{self.width}*{self.height}mm"
+
+    @property
+    def volume(self):
+        """计算体积（立方毫米）"""
+        return float(self.length) * float(self.width) * float(self.height)
+
+    @property
+    def volume_m3(self):
+        """计算体积（立方米）"""
+        return self.volume / 1000000000

@@ -1,0 +1,188 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}SKU管理 - Magic Paper{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table th {
+        white-space: nowrap;
+    }
+    .badge {
+        font-size: 0.875rem;
+    }
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="h3">SKU管理</h2>
+        </div>
+        <div class="col-auto">
+            {% if perms.gallery.add_sku %}
+            <a href="{% url 'gallery:sku_add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 新增SKU
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">搜索SKU</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="输入SKU编码、名称或供应商..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">所属SPU</label>
+                    <select name="spu" class="form-select">
+                        <option value="">全部SPU</option>
+                        {% for spu in spus %}
+                        <option value="{{ spu.id }}" {% if current_spu == spu.id|stringformat:"i" %}selected{% endif %}>
+                            {{ spu.spu_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">电镀工艺</label>
+                    <select name="plating" class="form-select">
+                        <option value="">全部工艺</option>
+                        {% for value, label in plating_choices %}
+                        <option value="{{ value }}" {% if current_plating == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">供应商</label>
+                    <select name="provider" class="form-select">
+                        <option value="">全部供应商</option>
+                        {% for provider in providers %}
+                        <option value="{{ provider }}" {% if current_provider == provider %}selected{% endif %}>
+                            {{ provider }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">状态</label>
+                    <select name="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="1" {% if current_status == '1' %}selected{% endif %}>启用</option>
+                        <option value="0" {% if current_status == '0' %}selected{% endif %}>禁用</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                    <a href="{% url 'gallery:sku_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo"></i> 重置
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SKU列表 -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">SKU编码</th>
+                            <th>SKU名称</th>
+                            <th>所属SPU</th>
+                            <th>供应商</th>
+                            <th>单价</th>
+                            <th>重量(kg)</th>
+                            <th>电镀工艺</th>
+                            <th>尺寸(mm)</th>
+                            <th>状态</th>
+                            <th class="text-end pe-3">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sku in skus %}
+                        <tr>
+                            <td class="ps-3">{{ sku.sku_code }}</td>
+                            <td>{{ sku.sku_name }}</td>
+                            <td>{{ sku.spu.spu_name }}</td>
+                            <td>{{ sku.provider_name }}</td>
+                            <td>{{ sku.unit_price }}</td>
+                            <td>{{ sku.weight }}</td>
+                            <td>{{ sku.get_plating_process_display }}</td>
+                            <td>{{ sku.dimensions }}</td>
+                            <td>
+                                <span class="badge {% if sku.status %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ sku.status|yesno:"启用,禁用" }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-3">
+                                {% if perms.gallery.change_sku %}
+                                <a href="{% url 'gallery:sku_edit' sku.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                   <i class="fas fa-edit"></i> 编辑
+                                </a>
+                                {% endif %}
+                                {% if perms.gallery.delete_sku %}
+                                <a href="{% url 'gallery:sku_delete' sku.id %}" 
+                                   class="btn btn-sm btn-outline-danger">
+                                   <i class="fas fa-trash"></i> 删除
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">暂无数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if is_paginated %}
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">&laquo; 首页</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">上一页</a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">下一页</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">末页 &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

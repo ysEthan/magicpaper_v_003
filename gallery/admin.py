@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, SPU
+from .models import Category, SPU, SKU
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -24,6 +24,32 @@ class SPUAdmin(admin.ModelAdmin):
         }),
         ('其他信息', {
             'fields': ('spu_remark', 'status')
+        }),
+        ('系统信息', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+@admin.register(SKU)
+class SKUAdmin(admin.ModelAdmin):
+    list_display = ('sku_code', 'sku_name', 'spu', 'provider_name', 
+                   'unit_price', 'plating_process', 'dimensions', 'status')
+    list_filter = ('plating_process', 'status', 'spu')
+    search_fields = ('sku_code', 'sku_name', 'provider_name')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('基本信息', {
+            'fields': ('sku_code', 'sku_name', 'spu', 'provider_name', 'material')
+        }),
+        ('规格信息', {
+            'fields': ('unit_price', 'weight', 'plating_process', 
+                      'length', 'width', 'height', 'other_dimensions')
+        }),
+        ('其他信息', {
+            'fields': ('img_url', 'status')
         }),
         ('系统信息', {
             'fields': ('created_at', 'updated_at'),

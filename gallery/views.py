@@ -4,8 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import redirect
-from .models import Category, SPU
-from .forms import CategoryForm, SPUForm
+from .models import Category, SPU, SKU
+from .forms import CategoryForm, SPUForm, SKUForm
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -200,4 +200,115 @@ class SPUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'SPU删除成功！')
+        return super().delete(request, *args, **kwargs)
+
+class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = SKU
+    template_name = 'gallery/sku_list.html'
+    context_object_name = 'skus'
+    paginate_by = 10
+    permission_required = 'gallery.view_sku'
+    
+    def handle_no_permission(self):
+        messages.error(self.request, '您没有查看SKU的权限')
+        return redirect('home')
+    
+    def get_queryset(self):
+        queryset = SKU.objects.select_related('spu').all()
+        
+        # 搜索功能
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                models.Q(sku_code__icontains=search_query) |
+                models.Q(sku_name__icontains=search_query) |
+                models.Q(provider_name__icontains=search_query)
+            )
+        
+        # SPU筛选
+        spu_id = self.request.GET.get('spu')
+        if spu_id:
+            queryset = queryset.filter(spu_id=spu_id)
+            
+        # 电镀工艺筛选
+        plating = self.request.GET.get('plating')
+        if plating:
+            queryset = queryset.filter(plating_process=plating)
+            
+        # 状态筛选
+        status = self.request.GET.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+            
+        # 供应商筛选
+        provider = self.request.GET.get('provider')
+        if provider:
+            queryset = queryset.filter(provider_name=provider)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # 获取所有供应商名称（去重）
+        providers = SKU.objects.values_list('provider_name', flat=True).distinct()
+        
+        context.update({
+            'search_query': self.request.GET.get('search', ''),
+            'current_spu': self.request.GET.get('spu', ''),
+            'current_plating': self.request.GET.get('plating', ''),
+            'current_status': self.request.GET.get('status', ''),
+            'current_provider': self.request.GET.get('provider', ''),
+            'spus': SPU.objects.filter(status=True),
+            'plating_choices': SKU.PLATING_PROCESS_CHOICES,
+            'providers': providers,
+        })
+        return context
+
+class SKUCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = SKU
+    form_class = SKUForm
+    template_name = 'gallery/sku_form.html'
+    success_url = reverse_lazy('gallery:sku_list')
+    permission_required = 'gallery.add_sku'
+    
+    def handle_no_permission(self):
+        messages.error(self.request, '您没有创建SKU的权限')
+        return redirect('gallery:sku_list')
+    
+    def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, 'SKU创建成功！')
+            return response
+        except ValidationError as e:
+            form.add_error(None, e)
+            return self.form_invalid(form)
+
+class SKUUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = SKU
+    form_class = SKUForm
+    template_name = 'gallery/sku_form.html'
+    success_url = reverse_lazy('gallery:sku_list')
+    permission_required = 'gallery.change_sku'
+    
+    def handle_no_permission(self):
+        messages.error(self.request, '您没有修改SKU的权限')
+        return redirect('gallery:sku_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'SKU更新成功！')
+        return super().form_valid(form)
+
+class SKUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = SKU
+    template_name = 'gallery/sku_confirm_delete.html'
+    success_url = reverse_lazy('gallery:sku_list')
+    permission_required = 'gallery.delete_sku'
+    
+    def handle_no_permission(self):
+        messages.error(self.request, '您没有删除SKU的权限')
+        return redirect('gallery:sku_list')
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'SKU删除成功！')
         return super().delete(request, *args, **kwargs)

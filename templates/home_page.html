@@ -1,188 +1,34 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Paper - 智慧办公平台</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* 自定义样式 */
-        .hero-section {
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
-                        url('/static/photos/modern-home-office.jpg');
-            background-size: cover;
-            background-position: center;
-            height: 500px;
-            display: flex;
-            align-items: center;
-            color: white;
-        }
+{% extends 'layouts/base.html' %}
+{% block content %}
 
-        .feature-card {
-            border: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-            margin-bottom: 20px;
-        }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
+    <div class="page-body">
 
-        .section-padding {
-            padding: 80px 0;
-        }
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
 
-        .bg-light-gray {
-            background-color: #f8f9fa;
-        }
+                {% include 'layouts/widget/_sticker.html' %}
 
-        /* 添加侧边栏样式 */
-        .sidebar {
-            height: 100%;
-            width: 250px;
-            position: fixed;
-            z-index: 1;
-            top: 0;
-            left: 0;
-            background-color: #333;
-            padding-top: 20px;
-            color: white;
-        }
+                {% include 'layouts/widget/_tag.html' %}
 
-        .sidebar ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
+                {% include 'layouts/widget/_map.html' %}
 
-        .sidebar li {
-            padding: 15px 25px;
-        }
+                {% include 'layouts/widget/_tri-board.html' %}
 
-        .sidebar li:hover {
-            background-color: #444;
-            cursor: pointer;
-        }
+                {% include 'layouts/widget/_one-line.html' %}
 
-        /* 调整主内容区域 */
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-    </style>
-</head>
+                {% include 'layouts/widget/_twi-board.html' %}
 
-<body>
-    <!-- 添加侧边栏 -->
-    <div class="sidebar">
-        <ul>
-            {% for item in menu_items %}
-                <li><a href="{{ item.url }}" style="color: white; text-decoration: none;">{{ item.name }}</a></li>
-            {% endfor %}
-        </ul>
+                {% include 'layouts/widget/_table.html' %}
+
+
+
+
+
+            </div>
+        </div>
+
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-        <!-- 导航栏 -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="#">Magic Paper</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#features">功能</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#solutions">解决方案</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#contact">联系我们</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
 
-        <!-- 主视觉区域 -->
-        <section class="hero-section">
-            <div class="container text-center">
-                <h1 class="display-4 mb-4">智慧办公新时代</h1>
-                <p class="lead mb-4">提升效率 · 简化协作 · 数字化转型</p>
-                <a href="#features" class="btn btn-primary btn-lg px-4">了解更多</a>
-            </div>
-        </section>
-
-        <!-- 功能特点 -->
-        <section id="features" class="section-padding">
-            <div class="container">
-                <h2 class="text-center mb-5">核心功能</h2>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card feature-card">
-                            <img src="/static/photos/workplace-with-laptop-on-table-at-home.jpg" class="card-img-top" alt="智能办公">
-                            <div class="card-body">
-                                <h5 class="card-title">智能办公</h5>
-                                <p class="card-text">集成化办公平台，提升工作效率</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card feature-card">
-                            <img src="/static/photos/group-of-people-brainstorming-and-taking-notes.jpg" class="card-img-top" alt="协作管理">
-                            <div class="card-body">
-                                <h5 class="card-title">协作管理</h5>
-                                <p class="card-text">高效团队协作，实时信息共享</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card feature-card">
-                            <img src="/static/photos/color-palette-guide-sample-colors-catalog-.jpg" class="card-img-top" alt="数据分析">
-                            <div class="card-body">
-                                <h5 class="card-title">数据分析</h5>
-                                <p class="card-text">智能数据分析，助力决策优化</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 联系我们 -->
-        <section id="contact" class="section-padding bg-light-gray">
-            <div class="container">
-                <h2 class="text-center mb-5">联系我们</h2>
-                <div class="row justify-content-center">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <form>
-                                    <div class="mb-3">
-                                        <input type="text" class="form-control" placeholder="您的姓名">
-                                    </div>
-                                    <div class="mb-3">
-                                        <input type="email" class="form-control" placeholder="电子邮箱">
-                                    </div>
-                                    <div class="mb-3">
-                                        <textarea class="form-control" rows="4" placeholder="请输入您的留言"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100">发送消息</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

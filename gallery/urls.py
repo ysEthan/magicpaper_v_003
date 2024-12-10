@@ -18,4 +18,8 @@ urlpatterns = [
     path('spus/add/', views.SPUCreateView.as_view(), name='spu_add'),
     path('spus/<int:pk>/edit/', views.SPUUpdateView.as_view(), name='spu_edit'),
     path('spus/<int:pk>/delete/', views.SPUDeleteView.as_view(), name='spu_delete'),
+    path('skus/', views.SKUListView.as_view(), name='sku_list'),
+    path('skus/add/', views.SKUCreateView.as_view(), name='sku_add'),
+    path('skus/<int:pk>/edit/', views.SKUUpdateView.as_view(), name='sku_edit'),
+    path('skus/<int:pk>/delete/', views.SKUDeleteView.as_view(), name='sku_delete'),
 ]
