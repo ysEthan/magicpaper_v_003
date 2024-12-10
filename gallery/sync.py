@@ -40,7 +40,7 @@ class ProductSync:
         
         if not start_time:
             # 默认同步最近7天的数据
-            start_time = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            start_time = (datetime.now() - timedelta(days=14)).strftime('%Y-%m-%d %H:%M:%S')
         if not end_time:
             end_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 

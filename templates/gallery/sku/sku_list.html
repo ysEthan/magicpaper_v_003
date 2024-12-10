@@ -13,6 +13,29 @@
     .card {
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
+    .product-img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .product-img-modal {
+        max-width: 100%;
+        max-height: 80vh;
+    }
+    /* 添加图片占位符样式 */
+    .no-image-placeholder {
+        width: 50px;
+        height: 50px;
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+    }
 </style>
 {% endblock %}
 
@@ -20,6 +43,21 @@
 <form id="csrfForm">
     {% csrf_token %}
 </form>
+
+<!-- 图片预览模态框 -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">图片预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" class="product-img-modal" alt="产品图片">
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="container-fluid">
     <div class="row mb-4">
@@ -83,11 +121,14 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">状态</label>
-                    <select name="status" class="form-select">
-                        <option value="">全部状态</option>
-                        <option value="1" {% if current_status == '1' %}selected{% endif %}>启用</option>
-                        <option value="0" {% if current_status == '0' %}selected{% endif %}>禁用</option>
+                    <label class="form-label">所属类目</label>
+                    <select name="category" class="form-select">
+                        <option value="">全部类目</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if current_category == category.id|stringformat:"i" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-auto">
@@ -109,9 +150,11 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-3">SKU编码</th>
+                            <th class="ps-3">图片</th>
+                            <th>SKU编码</th>
                             <th>SKU名称</th>
                             <th>所属SPU</th>
+                            <th>类目</th>
                             <th>供应商</th>
                             <th>单价</th>
                             <th>重量(kg)</th>
@@ -124,9 +167,22 @@
                     <tbody>
                         {% for sku in skus %}
                         <tr>
-                            <td class="ps-3">{{ sku.sku_code }}</td>
+                            <td class="ps-3">
+                                {% if sku.img_url %}
+                                <img src="{{ sku.img_url.url }}" 
+                                     class="product-img" 
+                                     alt="{{ sku.sku_name }}"
+                                     onclick="previewImage('{{ sku.img_url.url }}', '{{ sku.sku_name }}')">
+                                {% else %}
+                                <div class="no-image-placeholder">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>{{ sku.sku_code }}</td>
                             <td>{{ sku.sku_name }}</td>
                             <td>{{ sku.spu.spu_name }}</td>
+                            <td>{{ sku.spu.category.full_name }}</td>
                             <td>{{ sku.provider_name }}</td>
                             <td>{{ sku.unit_price }}</td>
                             <td>{{ sku.weight }}</td>
@@ -154,7 +210,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="10" class="text-center py-4">暂无数据</td>
+                            <td colspan="12" class="text-center py-4">暂无数据</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -168,10 +224,10 @@
                     <ul class="pagination justify-content-center mb-0">
                         {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">&laquo; 首页</a>
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">&laquo; 首页</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">上一页</a>
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">上一页</a>
                         </li>
                         {% endif %}
 
@@ -181,10 +237,10 @@
 
                         {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">下一页</a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">下一页</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">末页 &raquo;</a>
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_spu %}&spu={{ current_spu }}{% endif %}{% if current_plating %}&plating={{ current_plating }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">末页 &raquo;</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -270,6 +326,27 @@ document.addEventListener('DOMContentLoaded', function() {
             log('按钮状态已恢复');
         }
     });
+});
+
+// 图片预览功能
+function previewImage(url, title) {
+    const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+    const modalTitle = document.querySelector('#imagePreviewModal .modal-title');
+    const modalImage = document.querySelector('#imagePreviewModal .product-img-modal');
+    
+    modalTitle.textContent = title;
+    modalImage.src = url;
+    modal.show();
+}
+
+// 图片加载错误处理
+document.querySelectorAll('.product-img').forEach(img => {
+    img.onerror = function() {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'no-image-placeholder';
+        placeholder.innerHTML = '<i class="fas fa-image"></i>';
+        this.parentNode.replaceChild(placeholder, this);
+    };
 });
 </script>
 {% endblock %} 

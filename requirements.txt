@@ -5,4 +5,8 @@ Pillow
 pymysql
 cryptography
 pandas
+requests
+
+
+
 

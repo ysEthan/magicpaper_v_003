@@ -220,7 +220,11 @@ class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         return redirect('home')
     
     def get_queryset(self):
-        queryset = SKU.objects.select_related('spu').all()
+        # 使用 select_related 预加载 spu 和 category 数据
+        queryset = SKU.objects.select_related(
+            'spu',
+            'spu__category'  # 预加载 SPU 的类目数据
+        ).all()
         
         # 搜索功能
         search_query = self.request.GET.get('search')
@@ -228,13 +232,19 @@ class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             queryset = queryset.filter(
                 models.Q(sku_code__icontains=search_query) |
                 models.Q(sku_name__icontains=search_query) |
-                models.Q(provider_name__icontains=search_query)
+                models.Q(provider_name__icontains=search_query) |
+                models.Q(spu__category__category_name_zh__icontains=search_query)  # 添加类目搜索
             )
         
         # SPU筛选
         spu_id = self.request.GET.get('spu')
         if spu_id:
             queryset = queryset.filter(spu_id=spu_id)
+            
+        # 类目筛选
+        category_id = self.request.GET.get('category')  # 添加类目筛选
+        if category_id:
+            queryset = queryset.filter(spu__category_id=category_id)
             
         # 电镀工艺筛选
         plating = self.request.GET.get('plating')
@@ -255,8 +265,88 @@ class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
         # 获取所有供应商名称（去重）
-        providers = SKU.objects.values_list('provider_name', flat=True).distinct()
+        providers = SKU.objects.exclude(
+            provider_name=''
+        ).values_list(
+            'provider_name', flat=True
+        ).distinct().order_by('provider_name')
+        
+        # 获取所有启用状态的SPU（按名称去重）
+        spus = SPU.objects.filter(
+            status=True
+        ).values('spu_name').annotate(
+            first_id=models.Min('id'),
+            first_code=models.Min('spu_code')
+        ).values(
+            'first_id',
+            'spu_name',
+            'first_code'
+        ).order_by('spu_name')
+        
+        # 转换SPU数据格式
+        spus = [
+            {
+                'id': spu['first_id'],
+                'spu_name': spu['spu_name'],
+                'spu_code': spu['first_code']
+            }
+            for spu in spus
+        ]
+        
+        # 获取所有电镀工艺（去重）
+        plating_processes = SKU.objects.exclude(
+            plating_process=''
+        ).values_list(
+            'plating_process', flat=True
+        ).distinct()
+        
+        # 获取所有SPU名称和对应的电镀工艺
+        spu_plating = SKU.objects.exclude(
+            plating_process=''
+        ).values_list(
+            'spu__spu_name', 'plating_process'
+        ).distinct()
+        
+        # 按SPU分组电镀工艺
+        spu_plating_dict = {}
+        for spu_name, plating in spu_plating:
+            if spu_name not in spu_plating_dict:
+                spu_plating_dict[spu_name] = set()
+            spu_plating_dict[spu_name].add(plating)
+        
+        # 构建电镀工艺选项（按SPU分组后去重）
+        all_plating_processes = set()
+        for plating_set in spu_plating_dict.values():
+            all_plating_processes.update(plating_set)
+        
+        plating_choices = [
+            (process, dict(SKU.PLATING_PROCESS_CHOICES).get(process, process))
+            for process in sorted(all_plating_processes)
+        ]
+        
+        # 获取所有在用的类目（通过SKU关联的SPU）
+        categories = Category.objects.filter(
+            spus__skus__isnull=False  # 只获取有SKU关联的类目
+        ).distinct().values(
+            'id',
+            'category_name_zh',
+            'category_name_en',
+            'parent__category_name_zh'  # 获取父类目名称
+        ).order_by(
+            'parent__category_name_zh',
+            'category_name_zh'
+        )
+        
+        # 构建类目显示名称（包含父类目）
+        categories_list = [
+            {
+                'id': cat['id'],
+                'name': f"{cat['parent__category_name_zh']} > {cat['category_name_zh']}" if cat['parent__category_name_zh'] else cat['category_name_zh']
+            }
+            for cat in categories
+        ]
         
         context.update({
             'search_query': self.request.GET.get('search', ''),
@@ -264,9 +354,11 @@ class SKUListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             'current_plating': self.request.GET.get('plating', ''),
             'current_status': self.request.GET.get('status', ''),
             'current_provider': self.request.GET.get('provider', ''),
-            'spus': SPU.objects.filter(status=True),
-            'plating_choices': SKU.PLATING_PROCESS_CHOICES,
+            'current_category': self.request.GET.get('category', ''),
+            'spus': spus,
+            'plating_choices': plating_choices,
             'providers': providers,
+            'categories': categories_list,  # 使用新的类目列表
         })
         return context
 
