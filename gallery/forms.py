@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Category
+from .models import Category, SPU
 
 class CategoryForm(forms.ModelForm):
     class Meta:
@@ -43,3 +43,22 @@ class CategoryForm(forms.ModelForm):
             })
 
         return cleaned_data
+
+class SPUForm(forms.ModelForm):
+    class Meta:
+        model = SPU
+        fields = ['spu_code', 'spu_name', 'spu_remark', 'sales_channel', 
+                 'category', 'status']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 添加 Bootstrap 类
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+        
+        # 只显示最后一级类目
+        self.fields['category'].queryset = Category.objects.filter(is_last_level=True)
+        
+        # 添加帮助文本
+        self.fields['spu_code'].help_text = '唯一的SPU标识码，至少4个字符'
+        self.fields['category'].help_text = '只能选择最后一级类目'

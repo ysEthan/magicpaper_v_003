@@ -117,3 +117,98 @@ class Category(models.Model):
         if self.parent:
             return f"{self.parent.full_name} > {self.category_name_zh}"
         return self.category_name_zh
+
+class SPU(models.Model):
+    CHANNEL_CHOICES = (
+        (1, '线上'),
+        (2, '线下'),
+        (3, '全渠道'),
+    )
+
+    id = models.AutoField(primary_key=True, verbose_name='SPU ID')
+    spu_code = models.CharField(
+        max_length=50, 
+        unique=True, 
+        verbose_name='SPU编码',
+        help_text='唯一的SPU标识码'
+    )
+    spu_name = models.CharField(
+        max_length=200, 
+        verbose_name='SPU名称',
+        help_text='产品名称'
+    )
+    spu_remark = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name='备注',
+        help_text='产品描述或其他备注信息'
+    )
+    sales_channel = models.IntegerField(
+        choices=CHANNEL_CHOICES,
+        default=3,
+        verbose_name='销售渠道',
+        help_text='产品销售渠道'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,  # 防止删除仍有SPU的类目
+        related_name='spus',
+        verbose_name='所属类目',
+        help_text='产品所属类目'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name='创建时间'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        verbose_name='更新时间'
+    )
+    status = models.BooleanField(
+        default=True,
+        verbose_name='状态',
+        help_text='是否启用'
+    )
+
+    class Meta:
+        db_table = 'gallery_spu'
+        verbose_name = 'SPU'
+        verbose_name_plural = 'SPU列表'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['spu_code']),
+            models.Index(fields=['category']),
+            models.Index(fields=['sales_channel']),
+        ]
+
+    def __str__(self):
+        return f"{self.spu_code} - {self.spu_name}"
+
+    def clean(self):
+        # 验证SPU编码格式
+        if self.spu_code:
+            # 可以添加自定义的编码格式验证
+            if len(self.spu_code) < 4:
+                raise ValidationError({
+                    'spu_code': 'SPU编码长度不能小于4个字符'
+                })
+        
+        # 验证类目是否是最后一级
+        if self.category and not self.category.is_last_level:
+            raise ValidationError({
+                'category': '只能选择最后一级类目'
+            })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def channel_display(self):
+        """返回销售渠道的显示名称"""
+        return self.get_sales_channel_display()
+
+    @property
+    def category_full_name(self):
+        """返回完整的类目路径"""
+        return self.category.full_name if self.category else ''
