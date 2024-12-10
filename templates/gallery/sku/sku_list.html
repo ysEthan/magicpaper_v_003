@@ -17,6 +17,10 @@
 {% endblock %}
 
 {% block content %}
+<form id="csrfForm">
+    {% csrf_token %}
+</form>
+
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col">
@@ -24,9 +28,14 @@
         </div>
         <div class="col-auto">
             {% if perms.gallery.add_sku %}
-            <a href="{% url 'gallery:sku_add' %}" class="btn btn-primary">
+            <a href="{% url 'gallery:sku_add' %}" class="btn btn-primary me-2">
                 <i class="fas fa-plus"></i> 新增SKU
             </a>
+            {% endif %}
+            {% if perms.gallery.sync_sku %}
+            <button type="button" class="btn btn-success" id="syncDataBtn">
+                <i class="fas fa-sync"></i> 同步数据
+            </button>
             {% endif %}
         </div>
     </div>
@@ -185,4 +194,82 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 调试信息函数
+function log(message) {
+    console.log(`[${new Date().toISOString()}] ${message}`);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const syncBtn = document.getElementById('syncDataBtn');
+    if (!syncBtn) {
+        log('同步按钮未找到');
+        return;
+    }
+
+    log('页面加载完成，已找到同步按钮');
+
+    syncBtn.addEventListener('click', async function() {
+        log('点击了同步按钮');
+        
+        if (!confirm('确定要同步SKU数据吗？')) {
+            log('用户取消了同步操作');
+            return;
+        }
+
+        try {
+            // 显示加载提示
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 同步中...';
+            log('按钮状态已更新为加载中');
+
+            // 获取CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            log('已获取CSRF token');
+
+            // 发送同步请求
+            log('开始发送同步请求');
+            const response = await fetch('{% url "gallery:sku_sync" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+            log('收到服务器响应');
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            log('解析响应数据成功');
+
+            // 显示结果
+            if (data.success) {
+                log('同步成功');
+                alert('数据同步成功！\n' + data.message);
+                location.reload();
+            } else {
+                log('同步失败: ' + data.message);
+                alert('数据同步失败：' + data.message);
+            }
+
+        } catch (error) {
+            log('发生错误: ' + error.message);
+            console.error('同步请求失败:', error);
+            alert('同步请求失败：' + error.message);
+        } finally {
+            // 恢复按钮状态
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-sync"></i> 同步数据';
+            log('按钮状态已恢复');
+        }
+    });
+});
+</script>
 {% endblock %} 

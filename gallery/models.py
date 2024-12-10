@@ -334,6 +334,9 @@ class SKU(models.Model):
             models.Index(fields=['spu']),
             models.Index(fields=['created_at']),
         ]
+        permissions = [
+            ("sync_sku", "Can synchronize SKU data"),
+        ]
 
     def __str__(self):
         return f"{self.sku_code} - {self.sku_name}"

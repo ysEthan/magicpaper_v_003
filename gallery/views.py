@@ -8,6 +8,12 @@ from .models import Category, SPU, SKU
 from .forms import CategoryForm, SPUForm, SKUForm
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import permission_required
+from django.utils.decorators import method_decorator
+from django.views import View
+from .sync import ProductSync
 
 class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Category
@@ -312,3 +318,37 @@ class SKUDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'SKU删除成功！')
         return super().delete(request, *args, **kwargs)
+
+@method_decorator([require_POST, permission_required('gallery.sync_sku', raise_exception=True)], name='dispatch')
+class SKUSyncView(View):
+    def post(self, request, *args, **kwargs):
+        print("\n=== 开始同步数据 ===")
+        print(f"请求方法: {request.method}")
+        print(f"Content-Type: {request.headers.get('Content-Type')}")
+        print(f"用户: {request.user}")
+        print(f"权限: {request.user.has_perm('gallery.sync_sku')}")
+        
+        try:
+            sync = ProductSync()
+            print("创建 ProductSync 实例成功")
+            
+            synced_count = sync.sync_products()
+            print(f"同步完成，共同步 {synced_count} 条数据")
+            
+            response_data = {
+                'success': True,
+                'message': f'成功同步 {synced_count} 条数据'
+            }
+            print("返回数据:", response_data)
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            print(f"同步失败: {str(e)}")
+            print(f"错误类型: {type(e)}")
+            import traceback
+            print("错误堆栈:", traceback.format_exc())
+            
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
