@@ -1,0 +1,173 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-xl">
+    <div class="page-header d-print-none">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">{{ title }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form class="card" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">SKU编码</label>
+                                {{ form.sku_code }}
+                                {% if form.sku_code.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.sku_code.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">SKU名称</label>
+                                {{ form.sku_name }}
+                                {% if form.sku_name.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.sku_name.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">供应商</label>
+                                {{ form.provider_name }}
+                                {% if form.provider_name.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.provider_name.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">单价</label>
+                                {{ form.unit_price }}
+                                {% if form.unit_price.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.unit_price.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">重量(g)</label>
+                                {{ form.weight }}
+                                {% if form.weight.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.weight.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">电镀工艺</label>
+                                {{ form.plating_process }}
+                                {% if form.plating_process.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.plating_process.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">颜色</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.color.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">材质</label>
+                                {{ form.material }}
+                                {% if form.material.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.material.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label required">长度(mm)</label>
+                                {{ form.length }}
+                                {% if form.length.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.length.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label required">宽度(mm)</label>
+                                {{ form.width }}
+                                {% if form.width.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.width.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label required">高度(mm)</label>
+                                {{ form.height }}
+                                {% if form.height.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.height.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">其他尺寸</label>
+                                {{ form.other_dimensions }}
+                                {% if form.other_dimensions.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.other_dimensions.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">所属SPU</label>
+                                {{ form.spu }}
+                                {% if form.spu.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.spu.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">图片</label>
+                                {{ form.img_url }}
+                                {% if form.img_url.errors %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    {{ form.img_url.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <div class="d-flex">
+                            <a href="{% url 'gallery:sku_list' %}" class="btn btn-link">返回</a>
+                            <button type="submit" class="btn btn-primary ms-auto">{{ submit_text }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-label.required:after {
+    content: " *";
+    color: red;
+}
+.invalid-feedback {
+    display: block;
+}
+</style>
+{% endblock %} 

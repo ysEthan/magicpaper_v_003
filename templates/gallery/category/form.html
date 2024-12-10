@@ -1,0 +1,134 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-xl">
+    <div class="page-header d-print-none">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="page-title">{{ title }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        请检查表单中的错误并重新提交。
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">中文名称</label>
+                            {{ form.category_name_zh }}
+                            {% if form.category_name_zh.errors %}
+                            <div class="invalid-feedback">{{ form.category_name_zh.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">英文名称</label>
+                            {{ form.category_name_en }}
+                            {% if form.category_name_en.errors %}
+                            <div class="invalid-feedback">{{ form.category_name_en.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">父类目</label>
+                            {{ form.parent }}
+                            {% if form.parent.errors %}
+                            <div class="invalid-feedback">{{ form.parent.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">排序ID</label>
+                            {{ form.rank_id }}
+                            {% if form.rank_id.errors %}
+                            <div class="invalid-feedback">{{ form.rank_id.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">状态</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="invalid-feedback">{{ form.status.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">图片</label>
+                        {% if category and category.image %}
+                        <div class="mb-2">
+                            <img src="{{ category.image.url }}" alt="{{ category.category_name_zh }}" style="max-height: 100px;">
+                        </div>
+                        {% endif %}
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                        <div class="invalid-feedback">{{ form.image.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-footer">
+                        <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+                        <a href="{% url 'gallery:category_list' %}" class="btn btn-link">返回列表</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control.is-invalid {
+        display: block;
+    }
+    .invalid-feedback {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为所有表单控件添加必要的类
+    document.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(function(el) {
+        el.classList.add('form-control');
+        if (el.hasAttribute('required')) {
+            el.classList.add('required');
+        }
+        if (el.closest('.invalid-feedback')) {
+            el.classList.add('is-invalid');
+        }
+    });
+
+    // 为复选框添加样式
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
+        el.classList.add('form-check-input');
+        let wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+        el.parentNode.insertBefore(wrapper, el);
+        wrapper.appendChild(el);
+    });
+});
+</script>
+{% endblock %} 

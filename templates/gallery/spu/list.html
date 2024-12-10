@@ -1,0 +1,171 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}SPU列表{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="card">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">SPU列表</h5>
+                </div>
+                <div class="col text-end">
+                    <a href="{% url 'gallery:spu_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 新建SPU
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- 搜索栏 -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <form class="row g-3" method="get">
+                        <div class="col-auto">
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="搜索SPU编码/名称" value="{{ request.GET.search }}">
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select" name="sales_channel">
+                                <option value="">全部渠道</option>
+                                {% for value, label in sales_channels %}
+                                <option value="{{ value }}" {% if request.GET.sales_channel == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">搜索</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SPU列表表格 -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>SPU编码</th>
+                            <th>SPU名称</th>
+                            <th>所属分类</th>
+                            <th>销售渠道</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for spu in spus %}
+                        <tr>
+                            <td>{{ spu.spu_code }}</td>
+                            <td>{{ spu.spu_name }}</td>
+                            <td>{{ spu.category.category_name_zh }}</td>
+                            <td>{{ spu.get_sales_channel_display }}</td>
+                            <td>
+                                <span class="badge {% if spu.status == 1 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ spu.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ spu.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'gallery:spu_edit' spu.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-spu" 
+                                        data-id="{{ spu.id }}" data-name="{{ spu.spu_name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">暂无数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除 <span id="spuName"></span> 吗？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">确定删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 删除功能
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    let spuToDelete = null;
+
+    document.querySelectorAll('.delete-spu').forEach(button => {
+        button.addEventListener('click', function() {
+            spuToDelete = this.dataset.id;
+            document.getElementById('spuName').textContent = this.dataset.name;
+            deleteModal.show();
+        });
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (spuToDelete) {
+            fetch(`/gallery/spu/${spuToDelete}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('删除失败：' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除失败，请重试');
+            });
+        }
+    });
+
+    // 获取CSRF Token的函数
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 
