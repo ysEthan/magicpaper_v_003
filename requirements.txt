@@ -1,0 +1,8 @@
+django==4.2.16
+openpyxl
+reportlab
+Pillow
+pymysql
+cryptography
+pandas
+
