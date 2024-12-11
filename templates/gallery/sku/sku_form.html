@@ -9,6 +9,32 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
+        <!-- SKU 基本信息栏 -->
+        <div class="card card-sm mb-2">
+            <div class="card-header py-2">
+                <h6 class="card-title mb-0">SKU 基本信息</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.sku_code }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.sku_name }}
+                            {% if form.sku_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.sku_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- SPU 信息栏 -->
         <div class="card card-sm mb-2">
             <div class="card-header py-2">
@@ -46,32 +72,6 @@
                                     <p class="mb-0"><strong>备注：</strong><span id="spuRemark"></span></p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SKU 基本信息栏 -->
-        <div class="card card-sm mb-2">
-            <div class="card-header py-2">
-                <h6 class="card-title mb-0">SKU 基本信息</h6>
-            </div>
-            <div class="card-body py-2">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            {{ form.sku_code }}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            {{ form.sku_name }}
-                            {% if form.sku_name.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.sku_name.errors }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -220,6 +220,13 @@
                             {% endif %}
                         </div>
                     </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    {{ form.status }}
+                    <label class="form-check-label" for="{{ form.status.id_for_label }}">
+                        启用状态
+                    </label>
                 </div>
             </div>
         </div>
@@ -415,6 +422,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .row > [class*="col-"] {
         padding-bottom: 0.5rem;
+    }
+
+    /* 必填项的输入框样式 */
+    .form-control[placeholder$="*"] {
+        border-left: 3px solid #dc3545;  /* 红色边框标记 */
+    }
+
+    /* 必填项的 Select2 样式 */
+    .select2-container--bootstrap-5 .select2-selection--single {
+        border-left: 3px solid #dc3545;
+    }
+
+    /* 下拉框样式调整 */
+    select.form-control {
+        color: #495057;
+        border: 1px solid #ced4da;
+    }
+
+    /* 下拉框未选择时的样式 */
+    select.form-control option[value=""] {
+        color: #6c757d;
+    }
+
+    /* 电镀工艺下拉框特殊样式 */
+    select[name="plating_process"] {
+        border-color: #ced4da;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        background-size: 16px 12px;
     }
 </style>
 {% endblock %}

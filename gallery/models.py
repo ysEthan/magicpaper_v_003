@@ -238,15 +238,19 @@ class SKU(models.Model):
         help_text='产品具体型号名称'
     )
     provider_name = models.CharField(
-        max_length=100,
-        verbose_name='供应商名称',
-        help_text='产品供应商'
+        max_length=100, 
+        blank=True, 
+        default='无', 
+        verbose_name='供应商'
     )
     unit_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name='单价',
+        blank=True,
+        null=True,
+        default=0,
         help_text='产品单价（元）'
     )
     weight = models.DecimalField(
@@ -254,12 +258,16 @@ class SKU(models.Model):
         decimal_places=3,
         validators=[MinValueValidator(0)],
         verbose_name='重量',
+        blank=True,
+        null=True,
+        default=0,
         help_text='产品重量（kg）'
     )
     plating_process = models.CharField(
         max_length=20,
         choices=PLATING_PROCESS_CHOICES,
         default='none',
+        blank=True,
         verbose_name='电镀工艺',
         help_text='产品电镀工艺'
     )
@@ -268,6 +276,9 @@ class SKU(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name='长度',
+        blank=True,
+        null=True,
+        default=0,
         help_text='产品长度（mm）'
     )
     width = models.DecimalField(
@@ -275,6 +286,9 @@ class SKU(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name='宽度',
+        blank=True,
+        null=True,
+        default=0,
         help_text='产品宽度（mm）'
     )
     height = models.DecimalField(
@@ -282,6 +296,9 @@ class SKU(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name='高度',
+        blank=True,
+        null=True,
+        default=0,
         help_text='产品高度（mm）'
     )
     other_dimensions = models.CharField(
@@ -294,6 +311,8 @@ class SKU(models.Model):
     material = models.CharField(
         max_length=100,
         verbose_name='材质',
+        blank=True,
+        default='无',
         help_text='产品材质'
     )
     img_url = models.ImageField(
@@ -351,6 +370,27 @@ class SKU(models.Model):
 
     def save(self, *args, **kwargs):
         self.clean()
+        # 处理供应商为空的情况
+        if not self.provider_name:
+            self.provider_name = '无'
+        # 处理长宽高为空的情况
+        if self.length is None:
+            self.length = 0
+        if self.width is None:
+            self.width = 0
+        if self.height is None:
+            self.height = 0
+        # 处理单价和重量为空的情况
+        if self.unit_price is None:
+            self.unit_price = 0
+        if self.weight is None:
+            self.weight = 0
+        # 处理电镀工艺为空的情况
+        if not self.plating_process:
+            self.plating_process = 'none'
+        # 处理材质为空的情况
+        if not self.material:
+            self.material = '无'
         super().save(*args, **kwargs)
 
     @property

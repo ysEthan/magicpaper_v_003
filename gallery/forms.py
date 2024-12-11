@@ -64,6 +64,16 @@ class SPUForm(forms.ModelForm):
         self.fields['category'].help_text = '只能选择最后一级类目'
 
 class SKUForm(forms.ModelForm):
+    # 重新定义状态字段
+    status = forms.BooleanField(
+        required=False,  # 允许为空
+        initial=True,    # 默认为True
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'checked': 'checked'  # 确保默认选中
+        })
+    )
+
     class Meta:
         model = SKU
         fields = ['sku_code', 'sku_name', 'provider_name', 'unit_price', 
@@ -73,20 +83,23 @@ class SKUForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # 添加 Bootstrap 类和 placeholder
+        # 添加空选项到电镀工艺选择
+        self.fields['plating_process'].choices = [('', '请选择电镀工艺')] + list(self.fields['plating_process'].choices)[1:]
+        
+        # 添加 Bootstrap 类和 placeholder，必填项添加 *
         field_labels = {
-            'sku_code': 'SKU编码 (至少4个字符)',
-            'sku_name': 'SKU名称',
-            'provider_name': '供应商',
-            'unit_price': '单价 (元)',
-            'length': '长度 (mm)',
-            'width': '宽度 (mm)',
-            'height': '高度 (mm)',
-            'weight': '重量 (kg)',
-            'other_dimensions': '其他尺寸',
-            'plating_process': '电镀工艺',
-            'material': '材质',
-            'img_url': '产品图片'
+            'sku_code': 'SKU编码 (至少4个字符) *',
+            'sku_name': 'SKU名称 *',
+            'provider_name': '供应商',  # 非必填
+            'unit_price': '单价 (元)',  # 非必填
+            'length': '长度 (mm)',  # 非必填
+            'width': '宽度 (mm)',   # 非必填
+            'height': '高度 (mm)',  # 非必填
+            'weight': '重量 (kg)',  # 非必填
+            'other_dimensions': '其他尺寸',  # 非必填
+            'plating_process': '请选择电镀工艺',  # 非必填
+            'material': '材质',  # 非必填
+            'img_url': '产品图片'  # 非必填
         }
         
         for field_name, field in self.fields.items():
@@ -94,6 +107,19 @@ class SKUForm(forms.ModelForm):
             if field_name in field_labels:
                 field.widget.attrs['placeholder'] = field_labels[field_name]
                 field.label = ''  # 移除标签
+                
+                # 特殊处理需要空初始值的字段
+                if field_name in ['provider_name', 'length', 'width', 'height', 'unit_price', 'weight', 'plating_process', 'material']:
+                    field.initial = ''  # 设置初始值为空
+                    
+                # 特殊处理电镀工艺下拉框
+                if field_name == 'plating_process':
+                    field.widget.attrs.update({
+                        'class': 'form-select form-select-sm',  # 使用 Bootstrap 的 select 样式
+                    })
         
         # 只显示启用状态的SPU
         self.fields['spu'].queryset = SPU.objects.filter(status=True)
+        
+        # 确保状态默认为启用
+        self.fields['status'].initial = True
