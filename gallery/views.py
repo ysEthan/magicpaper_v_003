@@ -14,6 +14,8 @@ from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
 from django.views import View
 from .sync import ProductSync
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import get_object_or_404
 
 class CategoryListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Category
@@ -444,3 +446,29 @@ class SKUSyncView(View):
                 'success': False,
                 'message': str(e)
             })
+
+@require_http_methods(["GET"])
+def spu_detail_api(request, pk):
+    spu = get_object_or_404(SPU, pk=pk)
+    return JsonResponse({
+        'spu_code': spu.spu_code,
+        'spu_name': spu.spu_name,
+        'category_name': spu.category.full_name,
+        'sales_channel_display': spu.get_sales_channel_display(),
+        'spu_remark': spu.spu_remark,
+    })
+
+@require_http_methods(["GET"])
+def spu_search_api(request):
+    query = request.GET.get('term', '')
+    spus = SPU.objects.filter(
+        models.Q(spu_code__icontains=query) |
+        models.Q(spu_name__icontains=query)
+    ).filter(
+        status=True
+    ).only(
+        'id', 'spu_code', 'spu_name'
+    )[:10]  # 限制返回数量
+    
+    results = [{'id': spu.id, 'text': f"{spu.spu_code} - {spu.spu_name}"} for spu in spus]
+    return JsonResponse({'results': results})

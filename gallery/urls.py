@@ -23,4 +23,6 @@ urlpatterns = [
     path('skus/<int:pk>/edit/', views.SKUUpdateView.as_view(), name='sku_edit'),
     path('skus/<int:pk>/delete/', views.SKUDeleteView.as_view(), name='sku_delete'),
     path('skus/sync/', views.SKUSyncView.as_view(), name='sku_sync'),
+    path('api/spu/<int:pk>/', views.spu_detail_api, name='spu_detail_api'),
+    path('api/spu/search/', views.spu_search_api, name='spu_search_api'),
 ]
