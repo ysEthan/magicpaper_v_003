@@ -342,6 +342,13 @@ class SKU(models.Model):
         verbose_name='状态',
         help_text='是否启用'
     )
+    color = models.CharField(
+        max_length=50,
+        blank=True,
+        default='无',
+        verbose_name='颜色',
+        help_text='产品颜色'
+    )
 
     class Meta:
         db_table = 'gallery_sku'
@@ -391,6 +398,9 @@ class SKU(models.Model):
         # 处理材质为空的情况
         if not self.material:
             self.material = '无'
+        # 处理颜色为空的情况
+        if not self.color:
+            self.color = '无'
         super().save(*args, **kwargs)
 
     @property

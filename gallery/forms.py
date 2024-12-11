@@ -78,7 +78,7 @@ class SKUForm(forms.ModelForm):
         model = SKU
         fields = ['sku_code', 'sku_name', 'provider_name', 'unit_price', 
                  'weight', 'plating_process', 'length', 'width', 'height', 
-                 'other_dimensions', 'material', 'img_url', 'spu', 'status']
+                 'other_dimensions', 'material', 'color', 'img_url', 'spu', 'status']
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,6 +99,7 @@ class SKUForm(forms.ModelForm):
             'other_dimensions': '其他尺寸',  # 非必填
             'plating_process': '请选择电镀工艺',  # 非必填
             'material': '材质',  # 非必填
+            'color': '颜色',  # 非必填
             'img_url': '产品图片'  # 非必填
         }
         
@@ -109,7 +110,7 @@ class SKUForm(forms.ModelForm):
                 field.label = ''  # 移除标签
                 
                 # 特殊处理需要空初始值的字段
-                if field_name in ['provider_name', 'length', 'width', 'height', 'unit_price', 'weight', 'plating_process', 'material']:
+                if field_name in ['provider_name', 'length', 'width', 'height', 'unit_price', 'weight', 'plating_process', 'material', 'color']:
                     field.initial = ''  # 设置初始值为空
                     
                 # 特殊处理电镀工艺下拉框
