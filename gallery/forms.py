@@ -72,17 +72,28 @@ class SKUForm(forms.ModelForm):
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 添加 Bootstrap 类
-        for field in self.fields.values():
+        
+        # 添加 Bootstrap 类和 placeholder
+        field_labels = {
+            'sku_code': 'SKU编码 (至少4个字符)',
+            'sku_name': 'SKU名称',
+            'provider_name': '供应商',
+            'unit_price': '单价 (元)',
+            'length': '长度 (mm)',
+            'width': '宽度 (mm)',
+            'height': '高度 (mm)',
+            'weight': '重量 (kg)',
+            'other_dimensions': '其他尺寸',
+            'plating_process': '电镀工艺',
+            'material': '材质',
+            'img_url': '产品图片'
+        }
+        
+        for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
+            if field_name in field_labels:
+                field.widget.attrs['placeholder'] = field_labels[field_name]
+                field.label = ''  # 移除标签
         
         # 只显示启用状态的SPU
         self.fields['spu'].queryset = SPU.objects.filter(status=True)
-        
-        # 添加帮助文本
-        self.fields['sku_code'].help_text = '唯一的SKU标识码，至少4个字符'
-        self.fields['unit_price'].help_text = '单位：元'
-        self.fields['weight'].help_text = '单位：kg'
-        self.fields['length'].help_text = '单位：mm'
-        self.fields['width'].help_text = '单位：mm'
-        self.fields['height'].help_text = '单位：mm'
