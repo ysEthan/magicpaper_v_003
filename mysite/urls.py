@@ -31,7 +31,7 @@ urlpatterns = [
     path('', include('page.urls')),
 
     # 各个应用的路由配置
-    path('auth/', include('muggle.urls')),          # 用户认证模块
+    path('muggle/', include('muggle.urls')),          # 用户认证模块
     path('gallery/', include('gallery.urls')),      # 图库模块
     path('manufacturing/', include('manufacturing.urls')), # 制造模块
     path('procurement/', include('procurement.urls')), # 采购模块

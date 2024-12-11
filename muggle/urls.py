@@ -1,9 +1,6 @@
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib import admin
-from django.urls import path, include, re_path
-
-
-
+from django.urls import path
 
 from . import views
 

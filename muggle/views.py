@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, Pass
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
+
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -19,6 +20,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'muggle/login.html', {'form': form})
 
+
 def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -31,15 +33,18 @@ def register_view(request):
         form = UserCreationForm()
     return render(request, 'muggle/register.html', {'form': form})
 
+
 @login_required
 def logout_view(request):
     logout(request)
     messages.info(request, '您已成功退出登录。')
     return redirect('home')
 
+
 @login_required
 def profile_view(request):
     return render(request, 'muggle/profile.html')
+
 
 @login_required
 def change_password_view(request):
