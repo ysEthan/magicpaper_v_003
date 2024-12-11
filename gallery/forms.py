@@ -74,6 +74,16 @@ class SKUForm(forms.ModelForm):
         })
     )
 
+    # 重新定义图片上传字段
+    img_url = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',  # 只接受图片文件
+        }),
+        label='选择图片'  # 修改默认标签文本
+    )
+
     class Meta:
         model = SKU
         fields = ['sku_code', 'sku_name', 'provider_name', 'unit_price', 
@@ -124,3 +134,12 @@ class SKUForm(forms.ModelForm):
         
         # 确保状态默认为启用
         self.fields['status'].initial = True
+        
+        # 修改文件上传按钮的文本
+        self.fields['img_url'].widget.attrs['class'] = 'form-control'
+        self.fields['img_url'].widget.attrs['accept'] = 'image/*'  # 只接受图片文件
+        
+        # 修改文件选择按钮的文本（适用于中文环境）
+        import json
+        self.fields['img_url'].widget.attrs['data-browse'] = '选择图片'
+        self.fields['img_url'].widget.attrs['data-caption'] = '选择图片'

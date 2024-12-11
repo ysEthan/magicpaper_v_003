@@ -216,27 +216,29 @@
         <!-- 其他信息栏 -->
         <div class="card card-sm mb-2">
             <div class="card-header py-2">
-                <h6 class="card-title mb-0">其他信息</h6>
+                <h6 class="card-title mb-0">产品图片</h6>
             </div>
             <div class="card-body py-2">
                 <div class="row">
-                    <div class="col-md-12">
-                        <div class="mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="form-control" onclick="openCamera()" style="width: 120px;">
+                                拍照上传
+                            </button>
                             {{ form.img_url }}
-                            {% if form.img_url.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.img_url.errors }}
-                            </div>
-                            {% endif %}
+                        </div>
+                        {% if form.img_url.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.img_url.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <!-- 图片预览区域移到右侧 -->
+                        <div id="imagePreview" style="display: none;">
+                            <img id="preview" class="img-fluid" style="max-height: 100px; object-fit: contain;" alt="预览图片">
                         </div>
                     </div>
-                </div>
-
-                <div class="form-check mb-3">
-                    {{ form.status }}
-                    <label class="form-check-label" for="{{ form.status.id_for_label }}">
-                        启用状态
-                    </label>
                 </div>
             </div>
         </div>
@@ -246,6 +248,26 @@
             <button type="submit" class="btn btn-primary btn-sm">保存</button>
         </div>
     </form>
+</div>
+
+<!-- 添加拍照模态框 -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">拍照上传</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <video id="video" width="100%" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="takePhoto()">拍照</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% block extra_js %}
@@ -354,6 +376,95 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchSpuDetails(initialSpu.id).then(updateSpuDetails);
     {% endif %}
 });
+
+let videoStream;
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const preview = document.getElementById('preview');
+const imagePreview = document.getElementById('imagePreview');
+let cameraModal;  // 声明变量但不立即初始化
+
+// 等待 DOM 加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化 Modal
+    cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+});
+
+async function openCamera() {
+    try {
+        // 确保 Modal 已经初始化
+        if (!cameraModal) {
+            cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        }
+        
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',  // 优先使用后置摄像头
+                width: { ideal: 1280 },     // 设置理想的视频宽度
+                height: { ideal: 720 }      // 设置理想的视频高度
+            } 
+        });
+        video.srcObject = videoStream;
+        
+        // 等待视频准备就绪
+        await video.play();
+        
+        // 显示模态框
+        cameraModal.show();
+        
+        // 3秒后自动拍照
+        setTimeout(() => {
+            takePhoto();
+        }, 3000);
+    } catch (err) {
+        console.error('摄像头错误:', err);
+        alert('无法访问摄像头：' + err.message + '\n请确保已授予摄像头权限，并使用 HTTPS 或 localhost');
+    }
+}
+
+function takePhoto() {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // 将图片转换为文件
+    canvas.toBlob(function(blob) {
+        const file = new File([blob], "camera_photo.jpg", { type: "image/jpeg" });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.querySelector('input[type="file"]').files = dt.files;
+        
+        // 显示预览
+        preview.src = URL.createObjectURL(blob);
+        imagePreview.style.display = 'block';
+        
+        // 关闭摄像头和模态框
+        stopCamera();
+        cameraModal.hide();
+    }, 'image/jpeg', 0.8);
+}
+
+function stopCamera() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
+}
+
+// 监听文件输入变化，显示预览
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// 模态框关闭时停止摄像头
+document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
 </script>
 {% endblock %}
 
@@ -462,6 +573,51 @@ document.addEventListener('DOMContentLoaded', function() {
         background-repeat: no-repeat;
         background-position: right 0.5rem center;
         background-size: 16px 12px;
+    }
+
+    /* 调整文件上传区域的高度和样式 */
+    .form-control[type="file"],
+    button.form-control {
+        min-height: 100px !important;
+        padding: 0;                    /* 移除内边距 */
+        line-height: 100px;           /* 行高与高度一致 */
+        font-size: 1rem;
+    }
+
+    /* 调整文件上传区域的布局 */
+    .d-flex.gap-2 {
+        align-items: stretch;
+        width: 370px;  /* 调整整个上传区域的宽度 (180px * 2 + 10px gap) */
+    }
+
+    /* 调整拍照上传按钮的样式 */
+    button.form-control {
+        padding: 0;                   
+        border: 1px solid #ced4da;    
+        background-color: #ced4da;    
+        cursor: pointer;              
+        width: 180px !important;      /* 强制宽度为180px */
+        min-width: 180px;             /* 设置最小宽度 */
+        flex: 0 0 180px;              /* 固定宽度，不允许伸缩 */
+    }
+
+    /* 调整文件选择控件的样式 */
+    .form-control[type="file"] {
+        padding: 0;                   
+        display: flex;                
+        align-items: center;          
+        width: 180px !important;      /* 强制宽度为180px */
+        min-width: 180px;             /* 设置最小宽度 */
+        flex: 0 0 180px;              /* 固定宽度，不允许伸缩 */
+    }
+
+    /* 调整文件选择按钮的样式 */
+    .form-control[type="file"]::file-selector-button {
+        width: 180px;                /* 与容器相同的宽度 */
+        height: 100px;               /* 保持高度不变 */
+        padding: 0;                  /* 移除内边距 */
+        margin: 0;                   /* 移除外边距 */
+        border: none;                /* 移除边框 */
     }
 </style>
 {% endblock %}
