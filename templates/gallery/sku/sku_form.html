@@ -2,6 +2,9 @@
 
 {% block title %}{% if form.instance.pk %}编辑{% else %}新增{% endif %}SKU - Magic Paper{% endblock %}
 
+<!-- 添加 jsQR 库 -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
 {% block content %}
 <div class="container mt-3">
     <h4 class="mb-3">{% if form.instance.pk %}编辑{% else %}新增{% endif %}SKU</h4>
@@ -274,6 +277,39 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 定义 loadJsQR 函数
+    window.loadJsQR = function() {
+        return new Promise((resolve, reject) => {
+            // 如果已经加载了jsQR，直接返回
+            if (window.jsQR) {
+                resolve();
+                return;
+            }
+            
+            // 定义多个CDN源
+            const cdnUrls = [
+                'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+                'https://unpkg.com/jsqr@1.4.0/dist/jsQR.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'
+            ];
+            
+            function tryLoadScript(urls) {
+                if (urls.length === 0) {
+                    reject(new Error('无法加载jsQR库'));
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = urls[0];
+                script.onload = () => resolve();
+                script.onerror = () => tryLoadScript(urls.slice(1));
+                document.head.appendChild(script);
+            }
+            
+            tryLoadScript(cdnUrls);
+        });
+    };
+
     const spuSelect = document.getElementById('{{ form.spu.id_for_label }}');
     const spuDetails = document.getElementById('spuDetails');
 
@@ -393,6 +429,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function openCamera() {
     try {
+        // 确保 jsQR 库已加载
+        await loadJsQR();
+        
         // 确保 Modal 已经初始化
         if (!cameraModal) {
             cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
@@ -442,7 +481,10 @@ async function openCamera() {
         // 等待视频加载
         await new Promise((resolve) => {
             video.onloadedmetadata = () => {
-                video.play().then(resolve);
+                video.play().then(() => {
+                    startQRScanning(); // 启动二维码扫描
+                    resolve();
+                });
             };
         });
         
@@ -477,7 +519,7 @@ async function openCamera() {
         
     } catch (err) {
         console.error('摄像头错误:', err);
-        alert('无法访问摄像头或高拍仪：' + err.message + '\n请确保设备已正确连接并授予权限');
+        alert('错误：' + err.message + '\n请确保设备已连接、已授予权限，且网络连接正常');
         if (cameraModal) {
             cameraModal.hide();
         }
@@ -496,6 +538,30 @@ function takePhoto() {
     // 绘制高质量图像
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
+    // 获取图像数据用于二维码识别
+    try {
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        
+        if (code) {
+            console.log("找到二维码:", code.data);
+            // 将二维码内容设置为 SKU 编码
+            const skuCodeInput = document.querySelector('input[name="sku_code"]');
+            if (skuCodeInput) {
+                skuCodeInput.value = code.data;
+                // 添加一个视觉反馈
+                skuCodeInput.style.backgroundColor = '#e8f0fe';
+                setTimeout(() => {
+                    skuCodeInput.style.backgroundColor = '';
+                }, 1000);
+            }
+        } else {
+            console.log("未找到二维码");
+        }
+    } catch (err) {
+        console.error('二维码识别失败:', err);
+    }
+    
     // 将图片转换为文件，使用较高的质量设置
     canvas.toBlob(function(blob) {
         const file = new File([blob], "scanner_photo.jpg", { type: "image/jpeg" });
@@ -511,10 +577,13 @@ function takePhoto() {
         // 关闭摄像头和模态框
         stopCamera();
         cameraModal.hide();
-    }, 'image/jpeg', 0.95);  // 使用更高的图片质量
+    }, 'image/jpeg', 0.95);
 }
 
 function stopCamera() {
+    if (scanInterval) {
+        clearInterval(scanInterval);
+    }
     if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
     }
@@ -534,6 +603,40 @@ document.querySelector('input[type="file"]').addEventListener('change', function
 
 // 模态框关闭时停止摄像头
 document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopCamera);
+
+// 添加实时扫描功能
+let scanInterval;
+
+function startQRScanning() {
+    if (scanInterval) {
+        clearInterval(scanInterval);
+    }
+    
+    scanInterval = setInterval(() => {
+        if (!video.videoWidth) return;
+        
+        const tempCanvas = document.createElement('canvas');
+        const tempContext = tempCanvas.getContext('2d');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        tempContext.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        const imageData = tempContext.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const code = jsQR(imageData.data, tempCanvas.width, tempCanvas.height);
+        
+        if (code) {
+            // 找到二维码时显示视觉提示
+            const qrOverlay = document.getElementById('qrOverlay');
+            if (!qrOverlay) {
+                const overlay = document.createElement('div');
+                overlay.id = 'qrOverlay';
+                overlay.className = 'qr-overlay';
+                document.querySelector('.modal-body').appendChild(overlay);
+            }
+            qrOverlay.style.display = 'block';
+        }
+    }, 500); // 每500ms扫描一次
+}
 </script>
 {% endblock %}
 
@@ -723,6 +826,25 @@ document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopC
         color: white;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         z-index: 1000;
+    }
+
+    /* 在现有样式中添加 */
+    .qr-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 2px solid #00ff00;
+        pointer-events: none;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0% { border-color: rgba(0, 255, 0, 0.5); }
+        50% { border-color: rgba(0, 255, 0, 1); }
+        100% { border-color: rgba(0, 255, 0, 0.5); }
     }
 </style>
 {% endblock %}
