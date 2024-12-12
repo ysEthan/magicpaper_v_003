@@ -252,14 +252,15 @@
 
 <!-- 添加拍照模态框 -->
 <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">拍照上传</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <video id="video" width="100%" autoplay playsinline></video>
+            <div class="modal-body text-center">
+                <div id="countdown" class="countdown-overlay">3</div>
+                <video id="video" autoplay playsinline style="width: 100%; max-height: 80vh; object-fit: contain;"></video>
                 <canvas id="canvas" style="display: none;"></canvas>
             </div>
             <div class="modal-footer">
@@ -397,52 +398,120 @@ async function openCamera() {
             cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
         }
         
-        videoStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'environment',  // 优先使用后置摄像头
-                width: { ideal: 1280 },     // 设置理想的视频宽度
-                height: { ideal: 720 }      // 设置理想的视频高度
-            } 
-        });
-        video.srcObject = videoStream;
-        
-        // 等待视频准备就绪
-        await video.play();
-        
         // 显示模态框
         cameraModal.show();
         
-        // 3秒后自动拍照
-        setTimeout(() => {
-            takePhoto();
-        }, 3000);
+        // 等待模态框完全显示
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 尝试连接高拍仪设备
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        console.log('可用视频设备:', videoDevices); // 调试用
+        
+        // 查找高拍仪设备
+        const highCameraDevice = videoDevices.find(device => 
+            device.label.toLowerCase().includes('high') || 
+            device.label.toLowerCase().includes('capture') ||
+            device.label.toLowerCase().includes('scanner') ||
+            device.label.toLowerCase().includes('cam')
+        );
+
+        console.log('选中的设备:', highCameraDevice); // 调试用
+        
+        // 设置视频约束
+        const constraints = {
+            video: {
+                deviceId: highCameraDevice ? { exact: highCameraDevice.deviceId } : undefined,
+                width: { ideal: 3264 },
+                height: { ideal: 2448 },
+                facingMode: 'environment',
+            }
+        };
+        
+        // 停止任何现有的视频流
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // 获取新的视频流
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = videoStream;
+        
+        // 等待视频加载
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play().then(resolve);
+            };
+        });
+        
+        // 获取视频轨道信息并调整显示
+        const videoTrack = videoStream.getVideoTracks()[0];
+        const settings = videoTrack.getSettings();
+        console.log('视频设置:', settings);
+        
+        // 设置自动对焦
+        try {
+            const capabilities = videoTrack.getCapabilities();
+            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                await videoTrack.applyConstraints({
+                    advanced: [{ focusMode: 'continuous' }]
+                });
+            }
+        } catch (e) {
+            console.log('自动对焦设置失败:', e);
+        }
+        
+        // 显示3秒倒计时并自动拍照
+        const countdown = document.getElementById('countdown');
+        countdown.style.display = 'block';
+        
+        for (let i = 3; i > 0; i--) {
+            countdown.textContent = i;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        countdown.style.display = 'none';
+        takePhoto();
+        
     } catch (err) {
         console.error('摄像头错误:', err);
-        alert('无法访问摄像头：' + err.message + '\n请确保已授予摄像头权限，并使用 HTTPS 或 localhost');
+        alert('无法访问摄像头或高拍仪：' + err.message + '\n请确保设备已正确连接并授予权限');
+        if (cameraModal) {
+            cameraModal.hide();
+        }
     }
 }
 
 function takePhoto() {
     const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // 使用实际视频帧的分辨率
+    const videoTrack = videoStream.getVideoTracks()[0];
+    const settings = videoTrack.getSettings();
+    canvas.width = settings.width;
+    canvas.height = settings.height;
+    
+    // 绘制高质量图像
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // 将图片转换为文件
+    // 将图片转换为文件，使用较高的质量设置
     canvas.toBlob(function(blob) {
-        const file = new File([blob], "camera_photo.jpg", { type: "image/jpeg" });
+        const file = new File([blob], "scanner_photo.jpg", { type: "image/jpeg" });
         const dt = new DataTransfer();
         dt.items.add(file);
         document.querySelector('input[type="file"]').files = dt.files;
         
-        // 显示预览
+        // 显示预览（可能需要缩放以适应预览区域）
         preview.src = URL.createObjectURL(blob);
+        preview.style.objectFit = 'contain';
         imagePreview.style.display = 'block';
         
         // 关闭摄像头和模态框
         stopCamera();
         cameraModal.hide();
-    }, 'image/jpeg', 0.8);
+    }, 'image/jpeg', 0.95);  // 使用更高的图片质量
 }
 
 function stopCamera() {
@@ -618,6 +687,42 @@ document.getElementById('cameraModal').addEventListener('hidden.bs.modal', stopC
         padding: 0;                  /* 移除内边距 */
         margin: 0;                   /* 移除外边距 */
         border: none;                /* 移除边框 */
+    }
+
+    /* 添加视频相关样式 */
+    #video {
+        width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        background-color: #000;
+    }
+    
+    .modal-lg {
+        max-width: 800px;
+    }
+    
+    .modal-body {
+        padding: 0;
+        background-color: #000;
+        position: relative;
+    }
+    
+    #imagePreview img {
+        max-height: 200px;
+        object-fit: contain;
+    }
+
+    /* 倒计时样式 */
+    .countdown-overlay {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 100px;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        z-index: 1000;
     }
 </style>
 {% endblock %}
